@@ -1,7 +1,14 @@
-/* Service worker: guarda la app en el dispositivo para que funcione sin conexión.
-   No envía nada a ningún servidor. Solo cachea los propios archivos de la app. */
+/* Service worker del Diario.
+   No envía nada a ningún servidor: solo guarda los archivos de la propia app
+   para que funcione sin conexión.
 
-const CACHE = "diario-v3";
+   Estrategia:
+   - HTML (la app en sí): primero la red, y si no hay conexión, la copia guardada.
+     Así al subir una versión nueva se ve enseguida.
+   - Iconos y manifest: primero la copia guardada, que no cambian casi nunca.
+*/
+
+const CACHE = 'diario-v5';
 const ARCHIVOS = [
   './',
   './index.html',
@@ -28,8 +35,33 @@ self.addEventListener('activate', e => {
   );
 });
 
+self.addEventListener('message', e => {
+  if (e.data === 'actualizar-ya') self.skipWaiting();
+});
+
+function esHTML(req) {
+  return req.mode === 'navigate' ||
+         (req.headers.get('accept') || '').includes('text/html');
+}
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  // HTML: primero la red
+  if (esHTML(e.request)) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' })
+        .then(res => {
+          const copia = res.clone();
+          caches.open(CACHE).then(c => c.put('./index.html', copia));
+          return res;
+        })
+        .catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
+    );
+    return;
+  }
+
+  // Resto: primero la copia guardada
   e.respondWith(
     caches.match(e.request).then(hit => {
       if (hit) return hit;
@@ -39,7 +71,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copia));
         }
         return res;
-      }).catch(() => caches.match('./index.html'));
+      }).catch(() => hit);
     })
   );
 });

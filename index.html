@@ -23,6 +23,8 @@
   --xesta:#D9A441;
   --ameixa:#8C5A73;
   --ameixa-claro:#F0E6EA;
+  --agua:#4E8CA8;
+  --agua-claro:#E1EDF2;
   --r:14px;
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
@@ -209,6 +211,25 @@ svg.chart{width:100%;display:block}
 }
 .range-row button.sel{background:var(--granito);border-color:var(--granito);color:var(--papel)}
 
+/* ---------- agua ---------- */
+.agua-tot{font-size:13px;font-weight:650;color:var(--agua);font-variant-numeric:tabular-nums}
+.vasos{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.vaso{
+  background:none;border:none;padding:0;display:grid;place-items:center;
+  transition:transform .13s cubic-bezier(.34,1.56,.64,1);
+}
+.vaso:active{transform:scale(.86)}
+.vaso svg{width:100%;height:auto;display:block;max-width:34px}
+.vaso .cristal{fill:none;stroke:var(--linea);stroke-width:1.6}
+.vaso.lleno .cristal{stroke:var(--agua)}
+.vaso .liquido{fill:var(--agua);opacity:0;transition:opacity .2s ease}
+.vaso.lleno .liquido{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .vaso,.vaso .liquido{transition:none}
+}
+.agua-pie{font-size:12.5px;color:var(--granito-suave);margin-top:11px}
+.agua-pie b{color:var(--granito);font-weight:650}
+
 .movs-lista{margin-top:7px;border-left:2px solid var(--eucalipto-claro);padding-left:10px}
 .mov-fila{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:2.5px 0}
 .mov-fila .mv{color:var(--granito-suave);font-variant-numeric:tabular-nums;flex-shrink:0}
@@ -368,6 +389,16 @@ a{color:var(--eucalipto)}
       <div class="chead"><h2>Ánimo</h2></div>
       <div class="mood-row" id="moodRow"></div>
       <textarea class="mood-note" id="moodNota" placeholder="¿Cómo ha ido el día?" oninput="guardarNota()"></textarea>
+    </div>
+
+    <!-- agua -->
+    <div class="card">
+      <div class="chead">
+        <h2>Agua</h2>
+        <span class="agua-tot" id="aguaTot"></span>
+      </div>
+      <div class="vasos" id="vasos"></div>
+      <div class="agua-pie" id="aguaPie"></div>
     </div>
 
     <!-- comidas -->
@@ -660,6 +691,7 @@ a{color:var(--eucalipto)}
     <div class="hint">Tus datos se guardan solo en este dispositivo. Exporta de vez en cuando por si acaso.</div>
     <div style="text-align:center;padding:10px 0 4px">
       <button class="btn-txt danger" onclick="borrarTodo()">Borrar todos los datos</button>
+      <div style="font-size:11px;color:var(--granito-suave);margin-top:10px;font-variant-numeric:tabular-nums" id="verLbl"></div>
     </div>
   </div>
   <div class="sheet-foot"><button class="btn-main" onclick="guardarAjustes()">Guardar ajustes</button></div>
@@ -886,7 +918,41 @@ function renderHoy(){
   document.getElementById('chipHoy').style.display = fecha===hoyISO()?'none':'inline-block';
   document.getElementById('btnSig').disabled = fecha>=hoyISO();
 
-  renderMood(); renderComidas(); renderEjercicio(); renderMedidas(); renderCiclo();
+  renderMood(); renderAgua(); renderComidas(); renderEjercicio(); renderMedidas(); renderCiclo();
+}
+
+/* ---------- agua ---------- */
+const VASOS_META=8, ML_VASO=250;
+
+function renderAgua(){
+  const d=diaSoloLectura(fecha);
+  const n=(d&&d.agua)||0;
+  const cont=document.getElementById('vasos');
+  let html='';
+  for(let i=1;i<=VASOS_META;i++){
+    html+=`<button class="vaso ${i<=n?'lleno':''}" onclick="setAgua(${i})"
+       aria-label="${i} ${i===1?'vaso':'vasos'}" aria-pressed="${i<=n}">
+      <svg viewBox="0 0 22 28" aria-hidden="true">
+        <path class="liquido" d="M3.9 8 L18.1 8 L16.6 25.2 Q16.5 26.2 15.5 26.2 L6.5 26.2 Q5.5 26.2 5.4 25.2 Z"/>
+        <path class="cristal" d="M3 2 L19 2 L16.6 25.4 Q16.5 26.4 15.5 26.4 L6.5 26.4 Q5.5 26.4 5.4 25.4 Z"/>
+      </svg>
+    </button>`;
+  }
+  cont.innerHTML=html;
+
+  const litros=(n*ML_VASO/1000).toFixed(2).replace(/\.?0+$/,'').replace('.',',');
+  document.getElementById('aguaTot').textContent = n ? `${litros} L` : '';
+
+  const pie=document.getElementById('aguaPie');
+  if(n===0) pie.innerHTML='Toca un vaso cuando bebas. Cada uno son 250 ml.';
+  else if(n<6) pie.innerHTML=`<b>${n}</b> de 8 vasos · te faltan <b>${6-n}</b> para llegar al litro y medio`;
+  else if(n<VASOS_META) pie.innerHTML=`<b>${n}</b> de 8 vasos · ya pasaste del litro y medio`;
+  else pie.innerHTML='Los 2 litros completos. 💧';
+}
+function setAgua(i){
+  const d=dia(fecha);
+  d.agua = (d.agua===i) ? i-1 : i;
+  salvar(); renderAgua();
 }
 
 function renderMood(){
@@ -1287,6 +1353,10 @@ function renderEvo(){
     return {f,v:d?(d.ejercicios||[]).reduce((a,x)=>a+(Number(x.dist)||0),0):0};
   });
   bloques.push(tarjeta('Distancia recorrida',svgBarras(km,'#4A6B57','km',null)));
+
+  const agua=fs.map(f=>({f,v:datos.dias[f]&&datos.dias[f].agua?datos.dias[f].agua:0}));
+  if(agua.some(p=>p.v>0)) bloques.push(tarjeta('Agua',svgBarras(agua,'#4E8CA8','vasos',6)+
+    `<div style="font-size:11.5px;color:var(--granito-suave);margin-top:8px">La línea discontinua son 6 vasos (1,5 L).</div>`));
 
   const animo=fs.map(f=>({f,v:datos.dias[f]&&datos.dias[f].animo?datos.dias[f].animo:null}));
   bloques.push(tarjeta('Ánimo',svgLinea(animo,'#C08552','/ 5')));
@@ -1810,6 +1880,7 @@ function abrirAjustes(){
   document.getElementById('aGras').value=a.gras;
   document.getElementById('aCiclo').value=a.ciclo;
   previewMacros();
+  document.getElementById('verLbl').textContent='Versión '+VERSION;
   abrir('shAjustes');
 }
 function previewMacros(){
@@ -1909,8 +1980,35 @@ document.addEventListener('visibilitychange',()=>{
   if(!document.hidden && fecha>hoyISO()){ fecha=hoyISO(); renderHoy(); }
 });
 
+const VERSION='1.4';
+
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  let recargando=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(recargando) return;
+    recargando=true;
+    location.reload();
+  });
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'})
+      .then(reg=>{
+        reg.update();
+        // comprobar de nuevo cada vez que se vuelve a la app
+        document.addEventListener('visibilitychange',()=>{
+          if(!document.hidden) reg.update();
+        });
+        reg.addEventListener('updatefound',()=>{
+          const nuevo=reg.installing;
+          if(!nuevo) return;
+          nuevo.addEventListener('statechange',()=>{
+            if(nuevo.state==='installed' && navigator.serviceWorker.controller){
+              nuevo.postMessage('actualizar-ya');
+            }
+          });
+        });
+      })
+      .catch(()=>{});
+  });
 }
 
 renderHoy();
