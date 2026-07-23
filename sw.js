@@ -8,7 +8,7 @@
    - Iconos y manifest: primero la copia guardada, que no cambian casi nunca.
 */
 
-const CACHE = 'diario-v5';
+const CACHE = 'diario-v6';
 const ARCHIVOS = [
   './',
   './index.html',
