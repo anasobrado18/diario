@@ -1,7 +1,7 @@
 /* Service worker: guarda la app en el dispositivo para que funcione sin conexión.
    No envía nada a ningún servidor. Solo cachea los propios archivos de la app. */
 
-const CACHE = 'diario-v1';
+const CACHE = "diario-v3";
 const ARCHIVOS = [
   './',
   './index.html',

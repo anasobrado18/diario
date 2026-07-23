@@ -209,6 +209,61 @@ svg.chart{width:100%;display:block}
 }
 .range-row button.sel{background:var(--granito);border-color:var(--granito);color:var(--papel)}
 
+.movs-lista{margin-top:7px;border-left:2px solid var(--eucalipto-claro);padding-left:10px}
+.mov-fila{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:2.5px 0}
+.mov-fila .mv{color:var(--granito-suave);font-variant-numeric:tabular-nums;flex-shrink:0}
+
+.fase-cab{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+.fase-pill{
+  color:#fff;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:4px 11px;border-radius:99px;
+}
+.fase-dia{font-size:12px;color:var(--granito-suave);font-variant-numeric:tabular-nums}
+.fase-txt{font-size:13.5px;line-height:1.5}
+.fase-pie{font-size:12px;color:var(--granito-suave);margin-top:8px;padding-top:8px;
+  border-top:1px solid rgba(46,50,48,.1);font-variant-numeric:tabular-nums}
+
+/* ---------- buscador de alimentos ---------- */
+.res{
+  display:flex;align-items:center;gap:11px;padding:11px 2px;
+  border-bottom:1px solid var(--linea);cursor:pointer;background:none;border-left:none;border-right:none;border-top:none;
+  width:100%;text-align:left;
+}
+.res:active{background:var(--eucalipto-claro)}
+.res .rbody{flex:1;min-width:0}
+.res .rnom{font-size:14.5px;font-weight:550;word-break:break-word}
+.res .rmac{font-size:11.5px;color:var(--granito-suave);font-variant-numeric:tabular-nums;margin-top:1px}
+.res .redit{background:none;border:none;color:var(--granito-suave);font-size:15px;padding:4px 2px 4px 10px;flex-shrink:0}
+.btn-nuevo{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  background:var(--eucalipto-claro);border:none;border-radius:12px;
+  padding:13px 15px;margin-top:14px;color:var(--eucalipto);
+}
+.btn-nuevo .plus{font-size:22px;line-height:1;font-weight:300}
+.btn-nuevo b{font-size:14.5px;font-weight:650}
+.btn-nuevo small{font-size:11.5px;opacity:.75}
+.btn-suelto{
+  width:100%;background:none;border:none;color:var(--granito-suave);
+  font-size:13px;padding:14px 0 4px;text-decoration:underline;
+}
+.volver{background:none;border:none;color:var(--eucalipto);font-size:13.5px;padding:0 0 12px}
+.ali-cab{margin-bottom:16px}
+.ali-nom{font-size:19px;font-weight:650;letter-spacing:-.02em;line-height:1.25}
+.ali-sub{font-size:12.5px;color:var(--granito-suave);font-variant-numeric:tabular-nums;margin-top:3px}
+.resumen{background:var(--niebla);border-radius:12px;padding:14px 16px}
+.resumen .rk{display:flex;align-items:baseline;gap:7px;margin-bottom:9px}
+.resumen .rk b{font-size:31px;font-weight:250;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.resumen .rk span{font-size:13px;color:var(--granito-suave)}
+.resumen .rg{display:flex;gap:16px;font-size:13px;font-variant-numeric:tabular-nums}
+.resumen .rg em{font-style:normal;color:var(--granito-suave)}
+.aviso-100{
+  background:var(--niebla);border-radius:10px;padding:10px 12px;
+  font-size:12.5px;color:var(--granito-suave);margin:-4px 0 14px;
+}
+.sin-res{font-size:13.5px;color:var(--granito-suave);padding:14px 2px 2px}
+.sec-lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--granito-suave);
+  font-weight:700;padding:4px 0 6px}
+
 /* ---------- barra inferior ---------- */
 nav.tabs{
   position:fixed;left:0;right:0;bottom:0;z-index:30;
@@ -401,23 +456,94 @@ a{color:var(--eucalipto)}
 <div class="sheet-bg" id="shComida"><div class="sheet">
   <div class="sheet-head"><h3 id="tComida">Añadir comida</h3><button class="btn-txt" onclick="cerrar('shComida')">Cerrar</button></div>
   <div class="sheet-body">
-    <div class="f"><label>Momento</label>
-      <div class="seg" id="segMomento"></div>
+
+    <!-- PASO 1: buscar alimento -->
+    <div id="paso1">
+      <div class="f"><label>Momento</label><div class="seg" id="segMomento"></div></div>
+      <div class="f" style="margin-bottom:10px">
+        <label>Buscar alimento</label>
+        <input id="busca" type="text" placeholder="Escribe para buscar..." autocomplete="off" oninput="buscarAlimento()">
+      </div>
+      <div id="resultados"></div>
+      <button class="btn-nuevo" onclick="crearDesdeBusqueda()">
+        <span class="plus">+</span>
+        <span><b id="txtNuevo">Crear alimento nuevo</b><br><small>Guarda sus macros y lo tendrás siempre</small></span>
+      </button>
+      <button class="btn-suelto" onclick="modoSuelto()">Anotar algo sin guardarlo como alimento</button>
     </div>
-    <div class="f"><label>Qué comiste</label><input id="cNombre" type="text" placeholder="Ej. Ensalada de pollo"></div>
-    <div class="f"><label>Calorías (kcal)</label><input id="cKcal" type="number" inputmode="numeric" placeholder="0" oninput="autoKcal()"></div>
-    <div class="f"><label>Macros (g)</label>
+
+    <!-- PASO 2: cantidad -->
+    <div id="paso2" style="display:none">
+      <button class="volver" onclick="volverPaso1()">‹ Cambiar alimento</button>
+      <div class="ali-cab">
+        <div class="ali-nom" id="aliNom"></div>
+        <div class="ali-sub" id="aliSub"></div>
+      </div>
+      <div class="f"><label>Momento</label><div class="seg" id="segMomento2"></div></div>
+      <div class="f">
+        <label id="lblCantidad">Cantidad (g)</label>
+        <input id="cant" type="number" inputmode="decimal" placeholder="100" oninput="recalcular()">
+      </div>
+      <div class="seg" id="segUnidad" style="margin-bottom:14px;display:none"></div>
+      <div class="resumen" id="resumenMacros"></div>
+    </div>
+
+    <!-- PASO 3: entrada suelta (sin alimento) -->
+    <div id="paso3" style="display:none">
+      <button class="volver" onclick="volverPaso1()">‹ Volver al buscador</button>
+      <div class="f"><label>Momento</label><div class="seg" id="segMomento3"></div></div>
+      <div class="f"><label>Qué comiste</label><input id="cNombre" type="text" placeholder="Ej. Comida en casa de mi madre"></div>
+      <div class="f"><label>Calorías (kcal)</label><input id="cKcal" type="number" inputmode="numeric" placeholder="0" oninput="autoKcal()"></div>
+      <div class="f"><label>Macros (g)</label>
+        <div class="f3">
+          <input id="cProt" type="number" inputmode="decimal" placeholder="Prot." oninput="autoKcal()">
+          <input id="cCarb" type="number" inputmode="decimal" placeholder="Carbs" oninput="autoKcal()">
+          <input id="cGras" type="number" inputmode="decimal" placeholder="Grasa" oninput="autoKcal()">
+        </div>
+      </div>
+      <div class="calc-note" id="notaCalc" style="display:none"></div>
+    </div>
+
+  </div>
+  <div class="sheet-foot" id="pieComida" style="display:none">
+    <button class="btn-main" id="btnAnadir" onclick="anadirComida()">Añadir</button>
+  </div>
+</div></div>
+
+<!-- crear / editar alimento -->
+<div class="sheet-bg" id="shAlimento"><div class="sheet">
+  <div class="sheet-head"><h3 id="tAlimento">Nuevo alimento</h3><button class="btn-txt" onclick="cerrarAlimento()">Cerrar</button></div>
+  <div class="sheet-body">
+    <div class="f"><label>Nombre</label><input id="alNombre" type="text" placeholder="Ej. Pan de centeno Lidl"></div>
+    <div class="aviso-100">Los valores se meten <b>por cada 100 g</b>, tal cual vienen en la etiqueta.</div>
+    <div class="f"><label>Calorías por 100 g</label><input id="alKcal" type="number" inputmode="decimal" placeholder="0" oninput="previewAlimento()"></div>
+    <div class="f"><label>Macros por 100 g</label>
       <div class="f3">
-        <input id="cProt" type="number" inputmode="decimal" placeholder="Prot." oninput="autoKcal()">
-        <input id="cCarb" type="number" inputmode="decimal" placeholder="Carbs" oninput="autoKcal()">
-        <input id="cGras" type="number" inputmode="decimal" placeholder="Grasa" oninput="autoKcal()">
+        <input id="alProt" type="number" inputmode="decimal" placeholder="Prot." oninput="previewAlimento()">
+        <input id="alCarb" type="number" inputmode="decimal" placeholder="Carbs" oninput="previewAlimento()">
+        <input id="alGras" type="number" inputmode="decimal" placeholder="Grasa" oninput="previewAlimento()">
       </div>
     </div>
-    <div class="calc-note" id="notaCalc" style="display:none"></div>
+    <div class="calc-note" id="alPreview" style="display:none"></div>
+    <div class="f"><label>Peso de una unidad (opcional)</label>
+      <input id="alUnidad" type="number" inputmode="decimal" placeholder="Ej. 55 si un huevo pesa 55 g">
+    </div>
+    <div class="hint">Si lo rellenas, podrás apuntar «2 unidades» en vez de calcular los gramos.</div>
+    <div style="text-align:center;padding:4px 0" id="zonaBorrarAli"></div>
   </div>
-  <div class="sheet-foot">
-    <button class="btn-main" onclick="guardarComida()">Guardar</button>
+  <div class="sheet-foot"><button class="btn-main" onclick="guardarAlimento()">Guardar alimento</button></div>
+</div></div>
+
+<!-- gestión de alimentos -->
+<div class="sheet-bg" id="shMisAlimentos"><div class="sheet">
+  <div class="sheet-head"><h3>Mis alimentos</h3><button class="btn-txt" onclick="cerrar('shMisAlimentos')">Cerrar</button></div>
+  <div class="sheet-body">
+    <div class="f" style="margin-bottom:10px">
+      <input id="buscaGestion" type="text" placeholder="Buscar..." oninput="renderMisAlimentos()">
+    </div>
+    <div id="listaMisAlimentos"></div>
   </div>
+  <div class="sheet-foot"><button class="btn-main" onclick="nuevoAlimento('')">+ Crear alimento</button></div>
 </div></div>
 
 <div class="sheet-bg" id="shEjercicio"><div class="sheet">
@@ -427,9 +553,67 @@ a{color:var(--eucalipto)}
     <div class="f"><label>Duración (min)</label><input id="xDur" type="number" inputmode="numeric" placeholder="0"></div>
     <div class="f" id="fDist"><label>Distancia (km)</label><input id="xDist" type="number" inputmode="decimal" placeholder="0" oninput="calcRitmo()"></div>
     <div class="calc-note" id="notaRitmo" style="display:none"></div>
+
+    <div id="bloqueFuerza" style="display:none">
+      <div class="f" style="margin-bottom:8px"><label>Ejercicios</label></div>
+      <div id="listaMovs"></div>
+      <button class="btn-nuevo" style="margin-top:10px" onclick="abrirSelectorMov()">
+        <span class="plus">+</span>
+        <span><b>Añadir ejercicio</b><br><small>Series, repeticiones y peso</small></span>
+      </button>
+    </div>
+
     <div class="f"><label>Notas</label><textarea id="xNotas" placeholder="Sensaciones, ruta, series..."></textarea></div>
   </div>
   <div class="sheet-foot"><button class="btn-main" onclick="guardarEjercicio()">Guardar</button></div>
+</div></div>
+
+<!-- selector de ejercicio de fuerza -->
+<div class="sheet-bg" id="shMov"><div class="sheet">
+  <div class="sheet-head"><h3 id="tMov">Elegir ejercicio</h3><button class="btn-txt" onclick="cerrar('shMov')">Cerrar</button></div>
+  <div class="sheet-body">
+
+    <div id="movPaso1">
+      <div class="f" style="margin-bottom:10px">
+        <input id="buscaMov" type="text" placeholder="Buscar ejercicio..." autocomplete="off" oninput="buscarMov()">
+      </div>
+      <div class="chips" id="chipsMusculo" style="margin-bottom:6px"></div>
+      <div id="resultadosMov"></div>
+      <button class="btn-nuevo" onclick="crearMovDesdeBusqueda()">
+        <span class="plus">+</span>
+        <span><b id="txtNuevoMov">Crear ejercicio nuevo</b><br><small>Se guarda en tu lista</small></span>
+      </button>
+    </div>
+
+    <div id="movPaso2" style="display:none">
+      <button class="volver" onclick="volverMovPaso1()">‹ Cambiar ejercicio</button>
+      <div class="ali-cab">
+        <div class="ali-nom" id="movNom"></div>
+        <div class="ali-sub" id="movSub"></div>
+      </div>
+      <div class="f3">
+        <div class="f"><label>Series</label><input id="mvSeries" type="number" inputmode="numeric" placeholder="3"></div>
+        <div class="f"><label>Reps</label><input id="mvReps" type="number" inputmode="numeric" placeholder="10"></div>
+        <div class="f"><label>Peso (kg)</label><input id="mvPeso" type="number" inputmode="decimal" placeholder="—"></div>
+      </div>
+      <div class="hint">Deja el peso en blanco si es con tu propio peso corporal.</div>
+      <div id="ultimaVez"></div>
+    </div>
+
+  </div>
+  <div class="sheet-foot" id="pieMov" style="display:none">
+    <button class="btn-main" onclick="anadirMov()">Añadir al entreno</button>
+  </div>
+</div></div>
+
+<!-- crear ejercicio nuevo -->
+<div class="sheet-bg" id="shNuevoMov"><div class="sheet">
+  <div class="sheet-head"><h3>Nuevo ejercicio</h3><button class="btn-txt" onclick="cerrar('shNuevoMov')">Cerrar</button></div>
+  <div class="sheet-body">
+    <div class="f"><label>Nombre</label><input id="nmNombre" type="text" placeholder="Ej. Remo en máquina Behumax"></div>
+    <div class="f"><label>Músculo</label><div class="seg" id="segMusculo"></div></div>
+  </div>
+  <div class="sheet-foot"><button class="btn-main" onclick="guardarMovNuevo()">Guardar ejercicio</button></div>
 </div></div>
 
 <div class="sheet-bg" id="shMedidas"><div class="sheet">
@@ -460,6 +644,12 @@ a{color:var(--eucalipto)}
     <div class="calc-note" id="aPreview"></div>
     <div class="f"><label>Duración media del ciclo (días)</label><input id="aCiclo" type="number" inputmode="numeric" placeholder="28"></div>
     <div class="hint">Se usa solo para estimar la próxima regla. Si registras varios ciclos, la app calcula tu media real.</div>
+
+    <div class="f" style="border-top:1px solid var(--linea);padding-top:16px">
+      <label>Alimentos</label>
+      <button class="btn-main" style="background:var(--niebla);color:var(--granito)" onclick="cerrar('shAjustes');abrirMisAlimentos()">Ver y editar mis alimentos</button>
+    </div>
+    <div class="hint">Ajusta aquí los valores de los productos de marca con su etiqueta real.</div>
 
     <div class="f" style="border-top:1px solid var(--linea);padding-top:16px">
       <label>Copia de seguridad</label>
@@ -496,8 +686,110 @@ const FLUJOS=[
   {v:0,n:'Nada',p:0},{v:1,n:'Leve',p:1},{v:2,n:'Medio',p:2},{v:3,n:'Fuerte',p:3}
 ];
 
+/* Base de alimentos precargada. Valores por 100 g.
+   Los de marca conviene ajustarlos con la etiqueta real. */
+const ALIMENTOS_BASE=[
+ // proteína animal
+ ['Pechuga de pollo (cruda)',120,23,0,2.6,0],
+ ['Pechuga de pavo (cruda)',111,24,0,1.5,0],
+ ['Carne picada de cerdo magra',143,21,0,6.5,0],
+ ['Salmón',208,20,0,13,0],
+ ['Atún al natural (escurrido)',116,26,0,1,0],
+ ['Gambas / langostinos',85,20,0.2,0.5,0],
+ // huevo
+ ['Huevo entero',143,12.6,0.7,9.5,55],
+ ['Clara de huevo (Evoegg)',48,11,0.7,0.2,0],
+ // lácteos
+ ['Yogur griego light Hacendado',57,8.5,4,0.5,125],
+ ['Queso cottage (Lidl)',73,12,3.5,1.2,0],
+ ['Kéfir',63,3.3,4.5,3.5,0],
+ ['Bebida de soja sin azúcar',33,3.3,0.6,1.8,0],
+ // suplementos
+ ['Clear Whey manzana verde (Lidl)',344,82.8,2.4,0.4,25],
+ ['Clear Whey té-melocotón (Lidl)',344,82.8,2.4,0.4,25],
+ // vegetales proteicos
+ ['Tofu',76,8,1.9,4.8,0],
+ ['Soja texturizada (seca)',336,50,30,1.5,0],
+ ['Heura',168,17,4,9,0],
+ ['Garbanzos cocidos',139,7.5,20,2.6,0],
+ ['Lentejas cocidas',116,9,20,0.4,0],
+ ['Alubias cocidas',125,8,18,0.6,0],
+ // cereales y tubérculos
+ ['Avena',375,13,60,7,0],
+ ['Arroz (crudo)',350,7,78,0.6,0],
+ ['Fideos de arroz (secos)',364,6,82,0.6,0],
+ ['Quinoa (cruda)',368,14,64,6,0],
+ ['Patata',77,2,17,0.1,0],
+ ['Boniato',86,1.6,20,0.1,0],
+ ['Obleas de arroz',350,6,82,0.5,10],
+ ['Konjac',8,0.2,3,0,0],
+ ['Pan blanco',265,9,49,3.2,0],
+ ['Pan brioche hamburguesa (Mercadona)',300,8,48,8.5,85],
+ // verduras
+ ['Pimiento rojo',31,1,6,0.3,0],
+ ['Pimiento verde',20,0.9,4.6,0.2,0],
+ ['Brócoli',34,2.8,7,0.4,0],
+ ['Cebolla',40,1.1,9,0.1,0],
+ ['Puerro',61,1.5,14,0.3,0],
+ ['Zanahoria',41,0.9,10,0.2,0],
+ ['Pepino',15,0.7,3.6,0.1,0],
+ ['Tomate',18,0.9,3.9,0.2,0],
+ ['Tomate cherry',18,0.9,3.9,0.2,0],
+ ['Calabacín',17,1.2,3.1,0.3,0],
+ ['Berenjena',25,1,6,0.2,0],
+ ['Champiñones',22,3.1,3.3,0.3,0],
+ ['Lechuga',15,1.4,2.9,0.2,0],
+ ['Espinacas',23,2.9,3.6,0.4,0],
+ // fruta
+ ['Manzana',52,0.3,14,0.2,150],
+ ['Plátano',89,1.1,23,0.3,120],
+ ['Mango',60,0.8,15,0.4,0],
+ ['Melocotón',39,0.9,10,0.3,150],
+ ['Fresas',32,0.7,7.7,0.3,0],
+ ['Frutos rojos congelados',45,0.9,9,0.4,0],
+ ['Naranja',47,0.9,12,0.1,180],
+ ['Melón',34,0.8,8,0.2,0],
+ ['Sandía',30,0.6,8,0.2,0],
+ ['Aguacate',160,2,9,15,0],
+ // grasas y otros
+ ['Aceite de oliva',884,0,0,100,10],
+ ['Anacardos',553,18,30,44,0],
+ ['Almendras',579,21,22,50,0],
+ ['Crema de cacahuete',588,25,20,50,0],
+ ['Mostaza',66,4,6,3.3,0],
+ ['Vinagre de manzana',21,0,0.9,0,0],
+ ['Pepinillos',12,0.7,2.3,0.2,0],
+ ['Gelatina sin calorías',4,1,0,0,0],
+ ['Cacao puro en polvo',228,20,58,14,0]
+].map((a,i)=>({id:'b'+i,nombre:a[0],kcal:a[1],prot:a[2],carb:a[3],gras:a[4],unidad:a[5]||0,usos:0}));
+
+/* Catálogo de ejercicios de fuerza, agrupados por músculo */
+const MUSCULOS=['Pecho','Espalda','Hombro','Bíceps','Tríceps','Cuádriceps','Glúteo y femoral','Gemelo','Core'];
+const MOVS_BASE=[
+ ['Press de banca','Pecho'],['Press inclinado','Pecho'],['Press con mancuernas','Pecho'],
+ ['Aperturas con mancuernas','Pecho'],['Contractor (peck deck)','Pecho'],['Fondos en paralelas','Pecho'],['Flexiones','Pecho'],
+ ['Dominadas','Espalda'],['Jalón al pecho','Espalda'],['Remo con barra','Espalda'],
+ ['Remo con mancuerna','Espalda'],['Remo en polea baja','Espalda'],['Pull-over','Espalda'],['Hiperextensiones','Espalda'],
+ ['Press militar','Hombro'],['Press Arnold','Hombro'],['Elevaciones laterales','Hombro'],
+ ['Elevaciones frontales','Hombro'],['Pájaros','Hombro'],['Face pull','Hombro'],['Encogimientos','Hombro'],
+ ['Curl con barra','Bíceps'],['Curl con mancuernas','Bíceps'],['Curl martillo','Bíceps'],
+ ['Curl concentrado','Bíceps'],['Curl en polea','Bíceps'],
+ ['Extensión en polea','Tríceps'],['Press francés','Tríceps'],['Fondos en banco','Tríceps'],
+ ['Patada de tríceps','Tríceps'],['Extensión sobre cabeza','Tríceps'],
+ ['Sentadilla','Cuádriceps'],['Sentadilla goblet','Cuádriceps'],['Prensa de piernas','Cuádriceps'],
+ ['Extensión de cuádriceps','Cuádriceps'],['Zancadas','Cuádriceps'],['Sentadilla búlgara','Cuádriceps'],['Step-up','Cuádriceps'],
+ ['Peso muerto','Glúteo y femoral'],['Peso muerto rumano','Glúteo y femoral'],['Curl femoral','Glúteo y femoral'],
+ ['Hip thrust','Glúteo y femoral'],['Puente de glúteo','Glúteo y femoral'],['Patada de glúteo en polea','Glúteo y femoral'],
+ ['Abducción de cadera','Glúteo y femoral'],['Buenos días','Glúteo y femoral'],
+ ['Elevación de talones de pie','Gemelo'],['Elevación de talones sentada','Gemelo'],
+ ['Plancha','Core'],['Plancha lateral','Core'],['Crunch','Core'],['Elevación de piernas','Core'],
+ ['Russian twist','Core'],['Rueda abdominal','Core'],['Mountain climbers','Core'],['Dead bug','Core']
+].map((m,i)=>({id:'m'+i,nombre:m[0],musculo:m[1],usos:0}));
+
 const DEF={
   dias:{},
+  alimentos:JSON.parse(JSON.stringify(ALIMENTOS_BASE)),
+  movimientos:JSON.parse(JSON.stringify(MOVS_BASE)),
   ajustes:{kcal:1775,prot:40,carb:40,gras:20,ciclo:28}
 };
 
@@ -512,7 +804,12 @@ function cargar(){
     const raw=localStorage.getItem(CLAVE);
     if(!raw) return JSON.parse(JSON.stringify(DEF));
     const d=JSON.parse(raw);
-    return {dias:d.dias||{}, ajustes:Object.assign({},DEF.ajustes,d.ajustes||{})};
+    return {
+      dias:d.dias||{},
+      alimentos:d.alimentos||JSON.parse(JSON.stringify(ALIMENTOS_BASE)),
+      movimientos:d.movimientos||JSON.parse(JSON.stringify(MOVS_BASE)),
+      ajustes:Object.assign({},DEF.ajustes,d.ajustes||{})
+    };
   }catch(e){
     console.error('No se pudieron leer los datos guardados',e);
     return JSON.parse(JSON.stringify(DEF));
@@ -674,11 +971,18 @@ function renderEjercicio(){
     if(x.dur) partes.push(`${x.dur} min`);
     if(x.dist) partes.push(`${x.dist} km`);
     if(x.dist&&x.dur) partes.push(ritmo(x.dur,x.dist)+' /km');
-    return `<div class="item">
+    const movs=x.movs||[];
+    if(!partes.length&&movs.length) partes.push(`${movs.length} ${movs.length===1?'ejercicio':'ejercicios'}`);
+    const detalle=movs.length
+      ? `<div class="movs-lista">`+movs.map(m=>
+          `<div class="mov-fila"><span>${esc(m.nombre)}</span><span class="mv">${m.series}×${m.reps}${m.peso?` · ${m.peso} kg`:''}</span></div>`
+        ).join('')+`</div>` : '';
+    return `<div class="item" style="align-items:flex-start">
       <span class="tag">${esc(x.tipo)}</span>
       <div class="ibody">
         <div class="isub" style="margin-top:0">${partes.join(' · ')||'—'}</div>
-        ${x.notas?`<div class="iname" style="font-size:13.5px;font-weight:450;margin-top:2px">${esc(x.notas)}</div>`:''}
+        ${x.notas?`<div style="font-size:13.5px;margin-top:2px">${esc(x.notas)}</div>`:''}
+        ${detalle}
       </div>
       <button class="del" onclick="borrarEjercicio('${x.id}')" aria-label="Eliminar">×</button>
     </div>`;
@@ -755,21 +1059,62 @@ function mediaCiclo(){
   if(!largos.length) return null;
   return Math.round(largos.reduce((a,b)=>a+b,0)/largos.length);
 }
-function renderInfoCiclo(){
-  const ini=iniciosRegla();
-  const box=document.getElementById('cicloInfo');
-  if(!ini.length){ box.style.display='none'; return; }
+/* ---------- fases del ciclo ---------- */
+const FASES={
+  menstrual:{n:'Menstrual',c:'#8C5A73',bg:'#F0E6EA',
+    t:'Energía variable, sobre todo los dos primeros días. Si te encuentras bien no hay motivo para parar; si hay dolor, movimiento suave.'},
+  folicular:{n:'Folicular',c:'#4A6B57',bg:'#E3EAE3',
+    t:'Suele ser la fase con más energía y mejor tolerancia a las cargas altas. Buen momento para series pesadas y para tiradas de calidad.'},
+  ovulacion:{n:'Ovulación',c:'#D9A441',bg:'#F7EFDD',
+    t:'Pico hormonal, normalmente buena fuerza. Calienta bien las rodillas y tobillos antes de series intensas.'},
+  lutea:{n:'Lútea',c:'#5B7089',bg:'#E6EAEF',
+    t:'Temperatura basal más alta y el esfuerzo se percibe mayor. Suele ir mejor volumen moderado y rodajes suaves. Antojos y algo de retención son normales.'}
+};
+function faseDelDia(f){
+  const ini=iniciosRegla().filter(x=>x<=f);
+  if(!ini.length) return null;
   const ultimo=ini[ini.length-1];
   const largo=mediaCiclo()||datos.ajustes.ciclo||28;
-  const diaCiclo=diffDias(ultimo,hoyISO())+1;
+  const d=diffDias(ultimo,f)+1;
+  if(d>largo+20) return null; // demasiado antiguo, no estimamos
+
+  // fin de la regla: último día seguido con flujo desde el inicio
+  let finRegla=1;
+  for(let i=0;i<12;i++){
+    const dd=datos.dias[sumarDias(ultimo,i)];
+    if(dd&&dd.flujo>0) finRegla=i+1; else break;
+  }
+  const ovul=Math.max(8,largo-14);
+  let clave;
+  if(d<=finRegla) clave='menstrual';
+  else if(d<ovul-1) clave='folicular';
+  else if(d<=ovul+1) clave='ovulacion';
+  else clave='lutea';
+  return {clave,dia:d,largo,fase:FASES[clave]};
+}
+
+function renderInfoCiclo(){
+  const box=document.getElementById('cicloInfo');
+  const info=faseDelDia(fecha);
+  if(!info){ box.style.display='none'; return; }
+  const {fase,dia:dc,largo,clave}=info;
+  const ultimo=iniciosRegla().filter(x=>x<=fecha).pop();
   const prox=sumarDias(ultimo,largo);
-  const faltan=diffDias(hoyISO(),prox);
-  let txt=`Día <b>${diaCiclo}</b> del ciclo · media de <b>${largo}</b> días`;
-  if(faltan>0) txt+=` · próxima regla en <b>${faltan}</b> ${faltan===1?'día':'días'}`;
-  else if(faltan===0) txt+=` · próxima regla <b>hoy</b>`;
-  else txt+=` · <b>${-faltan}</b> ${-faltan===1?'día':'días'} de retraso`;
-  if(mediaCiclo()===null) txt+='<br><span style="opacity:.8">Registra otro ciclo para afinar la media.</span>';
-  box.innerHTML=txt;
+  const faltan=diffDias(fecha,prox);
+  let linea;
+  if(faltan>0) linea=`Próxima regla en ${faltan} ${faltan===1?'día':'días'}`;
+  else if(faltan===0) linea='Próxima regla prevista hoy';
+  else linea=`${-faltan} ${-faltan===1?'día':'días'} de retraso sobre lo previsto`;
+
+  box.style.background=fase.bg;
+  box.style.color='var(--granito)';
+  box.innerHTML=`
+    <div class="fase-cab">
+      <span class="fase-pill" style="background:${fase.c}">${fase.n}</span>
+      <span class="fase-dia">Día ${dc} · ciclo de ${largo} días</span>
+    </div>
+    <div class="fase-txt">${fase.t}</div>
+    <div class="fase-pie">${linea}${mediaCiclo()===null?' · estimado, registra otro ciclo para afinar':''}</div>`;
   box.style.display='block';
 }
 
@@ -962,18 +1307,268 @@ function tarjeta(titulo,contenido){
 function abrir(id){ document.getElementById(id).classList.add('open'); }
 function cerrar(id){ document.getElementById(id).classList.remove('open'); }
 
+/* ---------- añadir comida: buscador de alimentos ---------- */
+let aliSel=null, unidadModo='g';
+
 function abrirComida(){
-  editComidaId=null;
   momentoSel=momentoPorHora();
+  aliSel=null; unidadModo='g';
+  document.getElementById('busca').value='';
+  document.getElementById('paso1').style.display='block';
+  document.getElementById('paso2').style.display='none';
+  document.getElementById('paso3').style.display='none';
+  document.getElementById('pieComida').style.display='none';
+  document.getElementById('tComida').textContent='Añadir comida';
   pintarMomentos();
-  ['cNombre','cKcal','cProt','cCarb','cGras'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('notaCalc').style.display='none';
+  buscarAlimento();
   abrir('shComida');
-  setTimeout(()=>document.getElementById('cNombre').focus(),320);
 }
 function pintarMomentos(){
-  renderSeg('segMomento',MOMENTOS,momentoSel,v=>{ momentoSel=v; pintarMomentos(); });
+  ['segMomento','segMomento2','segMomento3'].forEach(id=>{
+    if(document.getElementById(id)) renderSeg(id,MOMENTOS,momentoSel,v=>{ momentoSel=v; pintarMomentos(); });
+  });
 }
+function normal(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function buscarAlimento(){
+  const q=normal(document.getElementById('busca').value.trim());
+  const cont=document.getElementById('resultados');
+  const txtNuevo=document.getElementById('txtNuevo');
+  const bruto=document.getElementById('busca').value.trim();
+  txtNuevo.textContent = bruto ? `Crear «${bruto}»` : 'Crear alimento nuevo';
+
+  let lista;
+  if(!q){
+    lista=datos.alimentos.slice().sort((a,b)=>(b.usos||0)-(a.usos||0)).slice(0,8);
+    cont.innerHTML=lista.length?'<div class="sec-lbl">Más usados</div>':'';
+  }else{
+    lista=datos.alimentos.filter(a=>normal(a.nombre).includes(q))
+      .sort((a,b)=>(b.usos||0)-(a.usos||0)).slice(0,20);
+    cont.innerHTML='';
+    if(!lista.length){
+      cont.innerHTML='<div class="sin-res">No tienes ningún alimento con ese nombre. Créalo aquí abajo y lo tendrás guardado para siempre.</div>';
+      return;
+    }
+  }
+  cont.innerHTML+=lista.map(a=>`
+    <button class="res" onclick="elegirAlimento('${a.id}')">
+      <div class="rbody">
+        <div class="rnom">${esc(a.nombre)}</div>
+        <div class="rmac">${Math.round(a.kcal)} kcal · P ${a.prot} · C ${a.carb} · G ${a.gras} <span style="opacity:.7">/100 g</span></div>
+      </div>
+      <span class="redit" onclick="event.stopPropagation();editarAlimento('${a.id}')" aria-label="Editar">✎</span>
+    </button>`).join('');
+}
+function elegirAlimento(id){
+  aliSel=datos.alimentos.find(a=>a.id===id);
+  if(!aliSel) return;
+  unidadModo='g';
+  document.getElementById('aliNom').textContent=aliSel.nombre;
+  document.getElementById('aliSub').textContent=
+    `${Math.round(aliSel.kcal)} kcal · P ${aliSel.prot} · C ${aliSel.carb} · G ${aliSel.gras} por 100 g`;
+  const segU=document.getElementById('segUnidad');
+  if(aliSel.unidad>0){
+    segU.style.display='flex';
+    renderSeg('segUnidad',['Gramos','Unidades'],'Gramos',v=>{
+      unidadModo = v==='Unidades' ? 'u':'g';
+      renderSeg('segUnidad',['Gramos','Unidades'],v,arguments0);
+      document.getElementById('lblCantidad').textContent = unidadModo==='u' ? 'Cantidad (unidades)' : 'Cantidad (g)';
+      recalcular();
+    });
+  } else segU.style.display='none';
+  document.getElementById('lblCantidad').textContent='Cantidad (g)';
+  document.getElementById('cant').value=aliSel.unidad>0?'':'100';
+  document.getElementById('paso1').style.display='none';
+  document.getElementById('paso2').style.display='block';
+  document.getElementById('pieComida').style.display='block';
+  document.getElementById('btnAnadir').textContent='Añadir';
+  recalcular();
+  setTimeout(()=>document.getElementById('cant').focus(),250);
+}
+/* referencia estable para el segmento de unidades */
+function arguments0(v){
+  unidadModo = v==='Unidades' ? 'u':'g';
+  renderSeg('segUnidad',['Gramos','Unidades'],v,arguments0);
+  document.getElementById('lblCantidad').textContent = unidadModo==='u' ? 'Cantidad (unidades)' : 'Cantidad (g)';
+  recalcular();
+}
+function calcularDesdeAlimento(){
+  const c=Number(document.getElementById('cant').value)||0;
+  const gramos = unidadModo==='u' ? c*(aliSel.unidad||0) : c;
+  const f=gramos/100;
+  return {
+    gramos,
+    kcal:aliSel.kcal*f, prot:aliSel.prot*f, carb:aliSel.carb*f, gras:aliSel.gras*f
+  };
+}
+function recalcular(){
+  if(!aliSel) return;
+  const r=calcularDesdeAlimento();
+  document.getElementById('resumenMacros').innerHTML=`
+    <div class="rk"><b>${Math.round(r.kcal)}</b><span>kcal${r.gramos?` · ${Math.round(r.gramos)} g`:''}</span></div>
+    <div class="rg">
+      <span><em>P</em> ${r.prot.toFixed(1)} g</span>
+      <span><em>C</em> ${r.carb.toFixed(1)} g</span>
+      <span><em>G</em> ${r.gras.toFixed(1)} g</span>
+    </div>`;
+}
+function volverPaso1(){
+  aliSel=null;
+  document.getElementById('paso1').style.display='block';
+  document.getElementById('paso2').style.display='none';
+  document.getElementById('paso3').style.display='none';
+  document.getElementById('pieComida').style.display='none';
+  buscarAlimento();
+}
+function modoSuelto(){
+  ['cNombre','cKcal','cProt','cCarb','cGras'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('notaCalc').style.display='none';
+  document.getElementById('paso1').style.display='none';
+  document.getElementById('paso3').style.display='block';
+  document.getElementById('pieComida').style.display='block';
+  document.getElementById('btnAnadir').textContent='Añadir';
+  pintarMomentos();
+}
+function anadirComida(){
+  const d=dia(fecha);
+  if(document.getElementById('paso2').style.display!=='none'){
+    if(!aliSel) return;
+    const c=Number(document.getElementById('cant').value)||0;
+    if(!c){ alert('Pon la cantidad.'); return; }
+    const r=calcularDesdeAlimento();
+    const etiqueta = unidadModo==='u'
+      ? `${aliSel.nombre} (${c} ${c===1?'ud':'uds'})`
+      : `${aliSel.nombre} (${Math.round(r.gramos)} g)`;
+    d.comidas.push({id:uid(),momento:momentoSel,nombre:etiqueta,
+      kcal:Math.round(r.kcal),prot:+r.prot.toFixed(1),carb:+r.carb.toFixed(1),gras:+r.gras.toFixed(1),
+      alimentoId:aliSel.id});
+    aliSel.usos=(aliSel.usos||0)+1;
+  } else {
+    const nombre=document.getElementById('cNombre').value.trim();
+    if(!nombre){ alert('Pon al menos el nombre.'); return; }
+    d.comidas.push({id:uid(),momento:momentoSel,nombre,
+      kcal:Number(document.getElementById('cKcal').value)||0,
+      prot:Number(document.getElementById('cProt').value)||0,
+      carb:Number(document.getElementById('cCarb').value)||0,
+      gras:Number(document.getElementById('cGras').value)||0});
+  }
+  salvar(); cerrar('shComida'); renderComidas();
+}
+
+/* ---------- crear / editar alimento ---------- */
+let aliEditandoId=null, volverA='comida';
+
+function crearDesdeBusqueda(){
+  nuevoAlimento(document.getElementById('busca').value.trim(),'comida');
+}
+function nuevoAlimento(nombre,origen){
+  aliEditandoId=null;
+  volverA=origen||'gestion';
+  document.getElementById('tAlimento').textContent='Nuevo alimento';
+  document.getElementById('alNombre').value=nombre||'';
+  ['alKcal','alProt','alCarb','alGras','alUnidad'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('alPreview').style.display='none';
+  document.getElementById('zonaBorrarAli').innerHTML='';
+  abrir('shAlimento');
+  setTimeout(()=>document.getElementById(nombre?'alKcal':'alNombre').focus(),300);
+}
+function editarAlimento(id,origen){
+  const a=datos.alimentos.find(x=>x.id===id); if(!a) return;
+  aliEditandoId=id;
+  volverA=origen||'comida';
+  document.getElementById('tAlimento').textContent='Editar alimento';
+  document.getElementById('alNombre').value=a.nombre;
+  document.getElementById('alKcal').value=a.kcal;
+  document.getElementById('alProt').value=a.prot;
+  document.getElementById('alCarb').value=a.carb;
+  document.getElementById('alGras').value=a.gras;
+  document.getElementById('alUnidad').value=a.unidad||'';
+  previewAlimento();
+  document.getElementById('zonaBorrarAli').innerHTML=
+    `<button class="btn-txt danger" onclick="borrarAlimento('${id}')">Eliminar este alimento</button>`;
+  abrir('shAlimento');
+}
+function previewAlimento(){
+  const p=Number(document.getElementById('alProt').value)||0;
+  const c=Number(document.getElementById('alCarb').value)||0;
+  const g=Number(document.getElementById('alGras').value)||0;
+  const box=document.getElementById('alPreview');
+  if(!p&&!c&&!g){ box.style.display='none'; return; }
+  const calc=Math.round(p*4+c*4+g*9);
+  const campo=document.getElementById('alKcal');
+  if(!campo.value){
+    campo.value=calc;
+    box.textContent=`Calculado desde los macros: ${calc} kcal por 100 g`;
+  }else{
+    const dif=Math.abs(Number(campo.value)-calc);
+    box.textContent = dif>25
+      ? `Ojo: según los macros saldrían ${calc} kcal (has puesto ${campo.value})`
+      : `Cuadra con los macros: ${calc} kcal`;
+  }
+  box.style.display='block';
+}
+function guardarAlimento(){
+  const nombre=document.getElementById('alNombre').value.trim();
+  if(!nombre){ alert('Ponle un nombre al alimento.'); return; }
+  const obj={
+    nombre,
+    kcal:Number(document.getElementById('alKcal').value)||0,
+    prot:Number(document.getElementById('alProt').value)||0,
+    carb:Number(document.getElementById('alCarb').value)||0,
+    gras:Number(document.getElementById('alGras').value)||0,
+    unidad:Number(document.getElementById('alUnidad').value)||0
+  };
+  if(aliEditandoId){
+    const a=datos.alimentos.find(x=>x.id===aliEditandoId);
+    Object.assign(a,obj);
+  }else{
+    obj.id='u'+uid(); obj.usos=0;
+    datos.alimentos.push(obj);
+    aliEditandoId=obj.id;
+  }
+  salvar();
+  cerrar('shAlimento');
+  if(volverA==='gestion'){ renderMisAlimentos(); }
+  else{
+    document.getElementById('busca').value='';
+    buscarAlimento();
+    elegirAlimento(aliEditandoId);
+  }
+  aliEditandoId=null;
+}
+function cerrarAlimento(){ cerrar('shAlimento'); aliEditandoId=null; }
+function borrarAlimento(id){
+  const a=datos.alimentos.find(x=>x.id===id); if(!a) return;
+  if(!confirm(`¿Eliminar «${a.nombre}» de tu lista de alimentos? Las comidas ya registradas no cambian.`)) return;
+  datos.alimentos=datos.alimentos.filter(x=>x.id!==id);
+  salvar(); cerrar('shAlimento');
+  if(volverA==='gestion') renderMisAlimentos(); else buscarAlimento();
+}
+
+/* ---------- gestión de alimentos ---------- */
+function abrirMisAlimentos(){
+  document.getElementById('buscaGestion').value='';
+  renderMisAlimentos();
+  abrir('shMisAlimentos');
+}
+function renderMisAlimentos(){
+  const q=normal(document.getElementById('buscaGestion').value.trim());
+  const lista=datos.alimentos
+    .filter(a=>!q||normal(a.nombre).includes(q))
+    .sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const cont=document.getElementById('listaMisAlimentos');
+  if(!lista.length){ cont.innerHTML='<div class="sin-res">Ningún alimento con ese nombre.</div>'; return; }
+  cont.innerHTML=`<div class="sec-lbl">${lista.length} alimentos</div>`+lista.map(a=>`
+    <button class="res" onclick="editarAlimento('${a.id}','gestion')">
+      <div class="rbody">
+        <div class="rnom">${esc(a.nombre)}</div>
+        <div class="rmac">${Math.round(a.kcal)} kcal · P ${a.prot} · C ${a.carb} · G ${a.gras} <span style="opacity:.7">/100 g</span></div>
+      </div>
+      <span class="redit">✎</span>
+    </button>`).join('');
+}
+
 function momentoPorHora(){
   const h=new Date().getHours();
   if(h<11) return 'Desayuno';
@@ -1005,21 +1600,9 @@ function autoKcal(){
   }
   nota.style.display='block';
 }
-function guardarComida(){
-  const nombre=document.getElementById('cNombre').value.trim();
-  if(!nombre){ alert('Pon al menos el nombre de la comida.'); return; }
-  dia(fecha).comidas.push({
-    id:uid(), momento:momentoSel, nombre,
-    kcal:Number(document.getElementById('cKcal').value)||0,
-    prot:Number(document.getElementById('cProt').value)||0,
-    carb:Number(document.getElementById('cCarb').value)||0,
-    gras:Number(document.getElementById('cGras').value)||0
-  });
-  salvar(); cerrar('shComida'); renderComidas();
-}
-
 function abrirEjercicio(){
   tipoSel='Carrera';
+  movsSesion=[];
   pintarTipos();
   ['xDur','xDist','xNotas'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('notaRitmo').style.display='none';
@@ -1028,8 +1611,154 @@ function abrirEjercicio(){
 function pintarTipos(){
   renderSeg('segTipo',TIPOS,tipoSel,v=>{ tipoSel=v; pintarTipos(); });
   document.getElementById('fDist').style.display=CON_DISTANCIA.includes(tipoSel)?'block':'none';
+  document.getElementById('bloqueFuerza').style.display=tipoSel==='Fuerza'?'block':'none';
+  if(tipoSel==='Fuerza') renderMovsSesion();
   calcRitmo();
 }
+
+/* ---------- ejercicios de fuerza dentro del entreno ---------- */
+let movsSesion=[], movSel=null, musculoFiltro=null;
+
+function renderMovsSesion(){
+  const cont=document.getElementById('listaMovs');
+  if(!movsSesion.length){ cont.innerHTML='<div class="vacio">Ningún ejercicio añadido todavía.</div>'; return; }
+  cont.innerHTML=movsSesion.map((m,i)=>`
+    <div class="item">
+      <div class="ibody">
+        <div class="iname">${esc(m.nombre)}</div>
+        <div class="isub">${m.series}×${m.reps}${m.peso?` · ${m.peso} kg`:' · peso corporal'} <span style="opacity:.7">· ${esc(m.musculo)}</span></div>
+      </div>
+      <button class="del" onclick="quitarMov(${i})" aria-label="Quitar">×</button>
+    </div>`).join('');
+}
+function quitarMov(i){ movsSesion.splice(i,1); renderMovsSesion(); }
+
+function abrirSelectorMov(){
+  movSel=null; musculoFiltro=null;
+  document.getElementById('buscaMov').value='';
+  document.getElementById('movPaso1').style.display='block';
+  document.getElementById('movPaso2').style.display='none';
+  document.getElementById('pieMov').style.display='none';
+  pintarChipsMusculo();
+  buscarMov();
+  abrir('shMov');
+}
+function pintarChipsMusculo(){
+  document.getElementById('chipsMusculo').innerHTML=MUSCULOS.map(m=>
+    `<button class="chip ${musculoFiltro===m?'sel':''}" onclick="filtrarMusculo('${m}')">${m}</button>`).join('');
+}
+function filtrarMusculo(m){
+  musculoFiltro = musculoFiltro===m ? null : m;
+  pintarChipsMusculo(); buscarMov();
+}
+function buscarMov(){
+  const bruto=document.getElementById('buscaMov').value.trim();
+  const q=normal(bruto);
+  document.getElementById('txtNuevoMov').textContent = bruto ? `Crear «${bruto}»` : 'Crear ejercicio nuevo';
+  let lista=datos.movimientos.filter(m=>{
+    if(musculoFiltro && m.musculo!==musculoFiltro) return false;
+    if(q && !normal(m.nombre).includes(q)) return false;
+    return true;
+  });
+  const cont=document.getElementById('resultadosMov');
+  if(!lista.length){
+    cont.innerHTML='<div class="sin-res">Ningún ejercicio con ese nombre. Créalo aquí abajo.</div>';
+    return;
+  }
+  lista.sort((a,b)=>(b.usos||0)-(a.usos||0));
+  // agrupar por músculo cuando no hay filtro ni búsqueda
+  if(!q && !musculoFiltro){
+    lista=lista.slice().sort((a,b)=>(b.usos||0)-(a.usos||0)).slice(0,10);
+    cont.innerHTML='<div class="sec-lbl">Más usados</div>';
+  } else cont.innerHTML='';
+  cont.innerHTML+=lista.slice(0,30).map(m=>`
+    <button class="res" onclick="elegirMov('${m.id}')">
+      <div class="rbody">
+        <div class="rnom">${esc(m.nombre)}</div>
+        <div class="rmac">${esc(m.musculo)}</div>
+      </div>
+      <span class="redit">›</span>
+    </button>`).join('');
+}
+function elegirMov(id){
+  movSel=datos.movimientos.find(m=>m.id===id); if(!movSel) return;
+  document.getElementById('movNom').textContent=movSel.nombre;
+  document.getElementById('movSub').textContent=movSel.musculo;
+  const u=ultimoRegistro(movSel.nombre);
+  document.getElementById('mvSeries').value=u?u.series:3;
+  document.getElementById('mvReps').value=u?u.reps:10;
+  document.getElementById('mvPeso').value=u&&u.peso?u.peso:'';
+  document.getElementById('ultimaVez').innerHTML = u
+    ? `<div class="calc-note" style="display:block">Última vez (${u.cuando}): ${u.series}×${u.reps}${u.peso?` con ${u.peso} kg`:''}</div>`
+    : '';
+  document.getElementById('movPaso1').style.display='none';
+  document.getElementById('movPaso2').style.display='block';
+  document.getElementById('pieMov').style.display='block';
+}
+function ultimoRegistro(nombre){
+  const fs=Object.keys(datos.dias).filter(f=>f<=fecha).sort().reverse();
+  for(const f of fs){
+    const ejs=datos.dias[f].ejercicios||[];
+    for(let i=ejs.length-1;i>=0;i--){
+      const movs=ejs[i].movs||[];
+      const hit=movs.slice().reverse().find(m=>m.nombre===nombre);
+      if(hit) return Object.assign({},hit,{cuando:f===fecha?'hoy':etiquetaCorta(f)});
+    }
+  }
+  return null;
+}
+function etiquetaCorta(f){
+  const d=aDate(f);
+  const dif=diffDias(f,hoyISO());
+  if(dif===1) return 'ayer';
+  if(dif<7) return `hace ${dif} días`;
+  return `${d.getDate()}/${d.getMonth()+1}`;
+}
+function volverMovPaso1(){
+  movSel=null;
+  document.getElementById('movPaso1').style.display='block';
+  document.getElementById('movPaso2').style.display='none';
+  document.getElementById('pieMov').style.display='none';
+  buscarMov();
+}
+function anadirMov(){
+  if(!movSel) return;
+  const series=Number(document.getElementById('mvSeries').value)||0;
+  const reps=Number(document.getElementById('mvReps').value)||0;
+  if(!series||!reps){ alert('Pon las series y las repeticiones.'); return; }
+  movsSesion.push({
+    nombre:movSel.nombre, musculo:movSel.musculo, series, reps,
+    peso:Number(document.getElementById('mvPeso').value)||0
+  });
+  movSel.usos=(movSel.usos||0)+1;
+  salvar();
+  cerrar('shMov');
+  renderMovsSesion();
+}
+
+/* crear ejercicio nuevo */
+let musculoNuevo='Pecho';
+function crearMovDesdeBusqueda(){
+  document.getElementById('nmNombre').value=document.getElementById('buscaMov').value.trim();
+  musculoNuevo=musculoFiltro||'Pecho';
+  pintarSegMusculo();
+  abrir('shNuevoMov');
+}
+function pintarSegMusculo(){
+  renderSeg('segMusculo',MUSCULOS,musculoNuevo,v=>{ musculoNuevo=v; pintarSegMusculo(); });
+}
+function guardarMovNuevo(){
+  const nombre=document.getElementById('nmNombre').value.trim();
+  if(!nombre){ alert('Ponle un nombre al ejercicio.'); return; }
+  const nuevo={id:'x'+uid(),nombre,musculo:musculoNuevo,usos:0};
+  datos.movimientos.push(nuevo);
+  salvar();
+  cerrar('shNuevoMov');
+  document.getElementById('buscaMov').value='';
+  musculoFiltro=null; pintarChipsMusculo(); buscarMov();
+  elegirMov(nuevo.id);
+}
+
 function calcRitmo(){
   const dur=Number(document.getElementById('xDur').value)||0;
   const dist=Number(document.getElementById('xDist').value)||0;
@@ -1044,10 +1773,16 @@ function guardarEjercicio(){
   const dur=Number(document.getElementById('xDur').value)||0;
   const dist=Number(document.getElementById('xDist').value)||0;
   const notas=document.getElementById('xNotas').value.trim();
-  if(!dur&&!dist&&!notas){ alert('Añade al menos la duración o la distancia.'); return; }
+  if(!dur&&!dist&&!notas&&!movsSesion.length){
+    alert('Añade al menos la duración, la distancia o algún ejercicio.'); return;
+  }
   dia(fecha).ejercicios.push({
-    id:uid(), tipo:tipoSel, dur, dist:CON_DISTANCIA.includes(tipoSel)?dist:0, notas
+    id:uid(), tipo:tipoSel, dur,
+    dist:CON_DISTANCIA.includes(tipoSel)?dist:0,
+    movs:tipoSel==='Fuerza'?movsSesion.slice():[],
+    notas
   });
+  movsSesion=[];
   salvar(); cerrar('shEjercicio'); renderEjercicio();
 }
 
@@ -1122,7 +1857,12 @@ function importar(ev){
       const nuevo=JSON.parse(e.target.result);
       if(!nuevo.dias) throw new Error('El archivo no tiene el formato esperado');
       if(!confirm('Esto reemplazará todos los datos actuales. ¿Seguir?')) return;
-      datos={dias:nuevo.dias,ajustes:Object.assign({},DEF.ajustes,nuevo.ajustes||{})};
+      datos={
+        dias:nuevo.dias,
+        alimentos:nuevo.alimentos||JSON.parse(JSON.stringify(ALIMENTOS_BASE)),
+        movimientos:nuevo.movimientos||JSON.parse(JSON.stringify(MOVS_BASE)),
+        ajustes:Object.assign({},DEF.ajustes,nuevo.ajustes||{})
+      };
       salvar(); cerrar('shAjustes'); renderTodo();
       alert('Copia restaurada.');
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
